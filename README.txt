@@ -145,28 +145,6 @@ data/
 
 out/
   (compiled .class files and generated reports)
-
-NOTES
------
-
-- This is a demonstration project for learning design patterns
-- No external dependencies required (pure Java SE)
-- Data is stored in memory only (not persisted)
-- Reports are generated as static files
-- Intentional code duplication exists for refactoring exercises
-
-KNOWN ISSUES (INTENTIONAL)
----------------------------
-
-The code contains several design issues that are intentionally left for
-students to refactor as part of a software design assignment:
-
-1. Multiple ExpenseRepository instances are created throughout the application
-2. CsvLoader, Summarizer, and report writers are instantiated repeatedly
-3. Date and number formatters are created separately in each writer class
-4. Report writers (TxtReportWriter and HtmlReportWriter) have parallel structure
-   with duplicated formatting methods (formatDate, formatMonth, formatAmount)
-
 LICENSE
 -------
 
