@@ -1,8 +1,8 @@
 package cli;
 
 import io.CsvLoader;
-import io.HtmlReportWriter;
-import io.TxtReportWriter;
+import report.ReportWriter;
+import report.ReportWriterFactory;
 import model.Expense;
 import service.ExpenseRepository;
 import service.Summarizer;
@@ -81,7 +81,7 @@ public class CommandHandler {
         try {
             YearMonth yearMonth = DateUtils.parseYearMonth(monthStr);
 
-            ExpenseRepository localRepo = new ExpenseRepository();
+            ExpenseRepository localRepo = ExpenseRepository.getInstance();
             localRepo.addAll(mainRepository.findAll());
 
             List<Expense> monthExpenses = localRepo.findByMonth(yearMonth);
@@ -159,12 +159,8 @@ public class CommandHandler {
      */
     public void handleExportTxt(String outputPath) {
         try {
-            TxtReportWriter writer = new TxtReportWriter();
-
-            ExpenseRepository exportRepo = new ExpenseRepository();
-            exportRepo.addAll(mainRepository.findAll());
-
-            writer.writeReport(outputPath, exportRepo);
+            ReportWriter writer = ReportWriterFactory.createReportWriter("txt");
+            writer.writeReport(outputPath, mainRepository);
         } catch (IOException e) {
             System.err.println("Error writing report: " + e.getMessage());
         }
@@ -177,12 +173,8 @@ public class CommandHandler {
      */
     public void handleExportHtml(String outputPath) {
         try {
-            HtmlReportWriter writer = new HtmlReportWriter();
-
-            ExpenseRepository exportRepo = new ExpenseRepository();
-            exportRepo.addAll(mainRepository.findAll());
-
-            writer.writeReport(outputPath, exportRepo);
+            ReportWriter writer = ReportWriterFactory.createReportWriter("html");
+            writer.writeReport(outputPath, mainRepository);
         } catch (IOException e) {
             System.err.println("Error writing report: " + e.getMessage());
         }

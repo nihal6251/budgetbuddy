@@ -1,43 +1,33 @@
-package io;
+package report;
 
 import model.Expense;
-import service.ExpenseRepository;
 import service.Summarizer;
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Writes HTML expense reports with basic inline styling.
  */
-public class HtmlReportWriter {
-    private final DateTimeFormatter dateFormatter;
-    private final DateTimeFormatter monthFormatter;
+public class HtmlReportWriter extends AbstractReportWriter {
 
-    public HtmlReportWriter() {
-        this.dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        this.monthFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
+    @Override
+    protected void writeReportContent(BufferedWriter writer, 
+                                     Summarizer summarizer, 
+                                     List<Expense> expenses) throws IOException {
+        writeHtmlHeader(writer);
+        writeMonthlySummary(writer, summarizer);
+        writeCategoryBreakdown(writer, summarizer);
+        writeGrandTotal(writer, summarizer);
+        writeRecentEntries(writer, expenses);
+        writeHtmlFooter(writer);
     }
 
-    public void writeReport(String filePath, ExpenseRepository repository) throws IOException {
-        List<Expense> allExpenses = repository.findAll();
-        Summarizer summarizer = new Summarizer(allExpenses);
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-            writeHtmlHeader(writer);
-            writeMonthlySummary(writer, summarizer);
-            writeCategoryBreakdown(writer, summarizer);
-            writeGrandTotal(writer, summarizer);
-            writeRecentEntries(writer, allExpenses);
-            writeHtmlFooter(writer);
-        }
-
+    @Override
+    protected void printConfirmationMessage(String filePath) {
         System.out.println("HTML report written to: " + filePath);
     }
 
@@ -78,9 +68,7 @@ public class HtmlReportWriter {
         writer.write("<tr><th>Category</th><th>Total Amount</th><th>Visual</th></tr>\n");
 
         Map<String, Double> categoryTotals = summarizer.categoryTotals(null);
-        double maxAmount = categoryTotals.values().stream()
-                .max(Double::compareTo)
-                .orElse(1.0);
+        double maxAmount = computeMaxCategoryAmount(categoryTotals);
 
         for (Map.Entry<String, Double> entry : categoryTotals.entrySet()) {
             String category = entry.getKey();
@@ -118,18 +106,6 @@ public class HtmlReportWriter {
 
     private void writeHtmlFooter(BufferedWriter writer) throws IOException {
         writer.write("</body>\n</html>\n");
-    }
-
-    private String formatDate(LocalDate date) {
-        return date.format(dateFormatter);
-    }
-
-    private String formatMonth(YearMonth month) {
-        return month.format(monthFormatter);
-    }
-
-    private String formatAmount(double amount) {
-        return String.format("%.2f", amount);
     }
 
     private String createBarHtml(double value, double maxValue) {

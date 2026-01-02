@@ -1,43 +1,33 @@
-package io;
+package report;
 
 import model.Expense;
-import service.ExpenseRepository;
 import service.Summarizer;
 import util.TextUtils;
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Writes plain-text expense reports with ASCII formatting.
  */
-public class TxtReportWriter {
-    private final DateTimeFormatter dateFormatter;
-    private final DateTimeFormatter monthFormatter;
+public class TxtReportWriter extends AbstractReportWriter {
 
-    public TxtReportWriter() {
-        this.dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        this.monthFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
+    @Override
+    protected void writeReportContent(BufferedWriter writer, 
+                                     Summarizer summarizer, 
+                                     List<Expense> expenses) throws IOException {
+        writeHeader(writer);
+        writeMonthlySummary(writer, summarizer);
+        writeCategoryBreakdown(writer, summarizer);
+        writeGrandTotal(writer, summarizer);
+        writeRecentEntries(writer, expenses);
     }
 
-    public void writeReport(String filePath, ExpenseRepository repository) throws IOException {
-        List<Expense> allExpenses = repository.findAll();
-        Summarizer summarizer = new Summarizer(allExpenses);
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-            writeHeader(writer);
-            writeMonthlySummary(writer, summarizer);
-            writeCategoryBreakdown(writer, summarizer);
-            writeGrandTotal(writer, summarizer);
-            writeRecentEntries(writer, allExpenses);
-        }
-
+    @Override
+    protected void printConfirmationMessage(String filePath) {
         System.out.println("Text report written to: " + filePath);
     }
 
@@ -65,9 +55,7 @@ public class TxtReportWriter {
         writer.write(TextUtils.separator(60) + "\n");
 
         Map<String, Double> categoryTotals = summarizer.categoryTotals(null);
-        double maxAmount = categoryTotals.values().stream()
-                .max(Double::compareTo)
-                .orElse(1.0);
+        double maxAmount = computeMaxCategoryAmount(categoryTotals);
 
         for (Map.Entry<String, Double> entry : categoryTotals.entrySet()) {
             String category = entry.getKey();
@@ -99,18 +87,6 @@ public class TxtReportWriter {
                     formatAmount(exp.getAmount()),
                     exp.getNotes()));
         }
-    }
-
-    private String formatDate(LocalDate date) {
-        return date.format(dateFormatter);
-    }
-
-    private String formatMonth(YearMonth month) {
-        return month.format(monthFormatter);
-    }
-
-    private String formatAmount(double amount) {
-        return String.format("%.2f", amount);
     }
 
     private String createBar(double value, double maxValue) {
